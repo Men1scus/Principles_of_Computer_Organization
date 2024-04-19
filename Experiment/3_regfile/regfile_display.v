@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 //*************************************************************************
 //   > 文件名: regfile_display.v
 //   > 描述  ：寄存器堆显示模块，调用FPGA板上的IO接口和触摸屏
@@ -65,6 +66,24 @@ module regfile_display(
         .test_data(test_data)
     );
 //-----{调用寄存器堆模块}end
+
+//-----{调用加法器模块}begin
+    
+    reg  [31:0] adder_operand1;
+    reg  [31:0] adder_operand2;
+    wire        adder_cin;
+    wire [31:0] adder_result  ;
+    wire        adder_cout;
+    adder adder_module(
+        .operand1(adder_operand1),
+        .operand2(adder_operand2),
+        .cin     (adder_cin     ),
+        .result  (adder_result  ),
+        .cout    (adder_cout    )
+    );
+     assign led_cout  = adder_cout;
+    
+//-----{调用加法器模块}end
 
 //---------------------{调用触摸屏模块}begin--------------------//
 //-----{实例化触摸屏}begin
@@ -141,6 +160,10 @@ module regfile_display(
         begin
             waddr  <= 5'd0;
         end
+        else if(adder_result)
+        begin
+            waddr <= 5'd3;
+        end
         else if (input_valid && input_sel==2'd2)
         begin
             waddr  <= input_value[4:0];
@@ -153,6 +176,10 @@ module regfile_display(
         if (!resetn)
         begin
             wdata  <= 32'd0;
+        end
+        else if (adder_result)
+        begin
+            wdata <= adder_result;
         end
         else if (input_valid && input_sel==2'd3)
         begin
@@ -213,6 +240,38 @@ module regfile_display(
                     display_valid <= 1'b1;
                     display_name  <= "WDATA";
                     display_value <= wdata;
+                end
+                6'd39:
+                begin
+                   display_valid<=1'b1;
+                   display_name<="ADER1";
+                   display_value<=raddr1;
+                end
+                 6'd40:
+                begin
+                   display_valid<=1'b1;
+                   display_name<="ADDT1";
+                   display_value<=rdata1;
+                   adder_operand1<=rdata1;
+                end
+                 6'd41:
+                begin
+                   display_valid<=1'b1;
+                   display_name<="ADER2";
+                   display_value<=raddr2;
+                end
+                 6'd42:
+                begin
+                   display_valid<=1'b1;
+                   display_name<="ADDT2";
+                   display_value<=rdata2;
+                   adder_operand2<=rdata2;
+                end
+                 6'd43:
+                begin
+                   display_valid<=1'b1;
+                   display_name<="RESUT";
+                   display_value<=adder_result;
                 end
                 default :
                 begin
